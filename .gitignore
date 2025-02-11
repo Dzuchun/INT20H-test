@@ -1,4 +1,8 @@
 target
 
-# (I gave up)
 Cargo.lock
+
+.idea
+
+/backend/.env
+/backend/diesel.toml
