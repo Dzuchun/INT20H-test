@@ -1,4 +1,4 @@
-use derive_more::{Display, From, FromStr, Into};
+use derive_more::{Display, From, FromStr, Into, TryFrom};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -65,7 +65,7 @@ pub struct Avatar(pub Vec<u8>);
 #[display("{_0}")]
 pub struct QuestId(pub Uuid);
 
-#[derive(Debug, Clone, Serialize, Deserialize, From)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, From, PartialEq, Eq, Hash)]
 pub struct Timestamp(pub chrono::NaiveDateTime);
 
 #[derive(Debug, Clone, Serialize, Deserialize, From)]
@@ -87,7 +87,7 @@ pub const QUEST_HISTORY_PAGE_SIZE: usize = 20;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuestHistoryPage {
-    /// max len is defined in the constant above
+    /// max len is limited in the constant above
     pub data: Box<[QuestHistoryRecord]>,
     pub page: u32,
     pub total_pages: u32,
@@ -98,7 +98,20 @@ pub struct QuestHistoryPage {
 #[try_from(repr)]
 #[repr(u8)]
 pub enum QuestState {
-    Dummy = 255,
+    /// While author still edits the quest and did not make it public yet
+    Unpublished = 0,
+    /// Author finished creating a quest and asked moderator for a review
+    Submitted = 1, // <-- moderator can edit this
+    /// After moderator editing.
+    Returned = 2, // <-- moderator can edit this
+    /// Quest is published by author
+    Published = 3,
+    /// Quest is published and reviewed by moderator
+    PublishedReviewed = 4,
+    /// Quest was locked down by a moderator. Any user completing a quest should be bailed out, author can view, but not edit and/or publish the quest.
+    ///
+    /// Terminal state
+    Locked = 5, // <-- issued if moderator edits this quest, creating a new one to propose to the author
 }
 
 impl From<QuestState> for u8 {
@@ -107,7 +120,7 @@ impl From<QuestState> for u8 {
     }
 }
 
-/// A quest info required to display a quest on user's home/profile
+/// Provided by server for quest lists
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserOwnedQuestRecord {
     pub id: QuestId,
@@ -118,6 +131,7 @@ pub struct UserOwnedQuestRecord {
 
 pub const USER_OWNED_QUESTS_PAGE_SIZE: usize = 20;
 
+/// Provided by server for quest lists
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserOwnedQuestsPage {
     /// max len is limited in the constant above
@@ -125,3 +139,76 @@ pub struct UserOwnedQuestsPage {
     pub page: u32,
     pub total_pages: u32,
 }
+
+/// quests/:id/info
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuestInfo {
+    pub id: QuestId,
+    pub owner: UserId,
+    pub title: String,
+    pub description: String,
+    pub pages: u32,
+}
+
+/// fn parse(String) -> Vec<Question>
+/// (parsed from source)
+#[derive(Debug, Serialize, Deserialize)] // (for DB)
+pub enum Question {
+    Opened(/* correct answer */),
+    Choice(/* variants and correct option */),
+    MultipleChoice(/* variants and correct option(s) */),
+    Image(/* image & correct rectangle */),
+}
+
+/// server -> client
+pub enum AskQuestion {
+    Opened,
+    Choice(/* variants */),
+    MultipleChoice(/* variants */),
+    Image(/* image */),
+}
+
+/// server <- client
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Answer {
+    Opened(/* user's answer */),
+    Choice(/* user's choice */),
+    MultipleChoice(/* user's choice(s) */),
+    Image(/* point (x,y) */),
+}
+
+/// POST /quests/create
+/// - returns [`QuestId`]
+/// - title, desc, source, etc. are empty
+///
+/// GET /quests/:id/info
+/// - return [`QuestInfo`]
+///
+/// POST /quests/:id/info
+/// - accepts [`QuestInfo`]
+///
+/// GET /quests/:id/page/:page
+/// - return [`String`] (source)
+///
+/// POST /quests/:id/page/:page
+/// - accepts [`String`] (source), [`Option<Duration>`] (time limit for page)
+/// - server saves source (and [`Vec<Question>`], after quest is published)
+/// - check for OK
+///
+/// // below is not final
+/// POST /quests/:id/answer/:page
+/// - accepts [`Vec<Answer>`]
+/// - check for OK
+///
+/// /quests/:id
+///
+/// qid = POST /quests/create
+/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=0
+/// POST /quests/qid/page/0 "lalalal, question" -- creates page 0
+/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=1
+/// POST /quests/qid/page/1 "lalalal, question2" -- creates page 1
+/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=2
+/// POST /quests/qid/page/0 "lalalal, question ;)" -- updates page 0
+/// POST /quests/qid/info "Title; description" -- update title/description
+/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=2
+mod doc {}
