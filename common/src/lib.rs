@@ -1,4 +1,4 @@
-use derive_more::{Display, From, FromStr, Into};
+use derive_more::{Display, From, FromStr, Into, TryFrom};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -6,7 +6,7 @@ use uuid::Uuid;
     Debug, Serialize, Deserialize, From, Into, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[serde(transparent)]
-pub struct UserId(Uuid);
+pub struct UserId(pub Uuid);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegisterRequest {
@@ -36,7 +36,7 @@ pub struct UserInfo {
     pub id: UserId,
     pub name: String,
     pub email: String, // probably will be changed for some sort of enum representing identity (?)
-    pub avatar_url: Option<String>,
+    pub avatar_url: Option<Uuid>,
 }
 
 impl UserInfo {
