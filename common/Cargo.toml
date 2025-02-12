@@ -8,3 +8,4 @@ serde = { version = "1.0.217", features = ["derive"] }
 derive_more = { version = "2.0.1", features = ["from", "into", "from_str", "display", "try_from"], default-features = false }
 uuid = { version = "1.13.1", features = ["serde"] }
 chrono = { version = "0.4.39", features = ["serde"] }
+thiserror = { version = "2.0.11", default-features = false }

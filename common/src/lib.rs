@@ -2,6 +2,9 @@ use derive_more::{Display, From, FromStr, Into, TryFrom};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+mod questions;
+pub use questions::*;
+
 #[derive(
     Debug, Serialize, Deserialize, From, Into, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
@@ -188,6 +191,30 @@ pub enum Question {
         src: String,
         correct_bounds: ImageRectangle,
     },
+}
+
+impl From<&Question> for AskQuestion {
+    fn from(value: &Question) -> Self {
+        match value {
+            Question::Opened(_) => AskQuestion::Opened,
+            Question::Choice {
+                variants,
+                correct: _,
+            } => AskQuestion::Choice {
+                variants: variants.clone(),
+            },
+            Question::MultipleChoice {
+                variants,
+                correct: _,
+            } => AskQuestion::MultipleChoice {
+                variants: variants.clone(),
+            },
+            Question::Image {
+                src,
+                correct_bounds: _,
+            } => AskQuestion::Image { src: src.clone() },
+        }
+    }
 }
 
 /// server -> client
