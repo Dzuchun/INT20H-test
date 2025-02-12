@@ -1,0 +1,7 @@
+# these are not required for build, but can take up a lot of space
+
+# git files
+.git
+
+# cargo artefacts
+target
