@@ -152,10 +152,23 @@ pub struct QuestInfo {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub struct ImageRectangle {
-    pub top: u32,
     pub left: u32,
+    pub top: u32,
     pub width: u32,
     pub height: u32,
+}
+
+impl ImageRectangle {
+    fn contains(&self, left: u32, top: u32) -> bool {
+        let Some(dx) = left.checked_sub(self.left) else {
+            return false;
+        };
+        let Some(dy) = top.checked_sub(self.top) else {
+            return false;
+        };
+
+        dx <= self.width && dy <= self.height
+    }
 }
 
 /// fn parse(String) -> Vec<Question>
@@ -192,8 +205,24 @@ pub enum Answer {
     Opened(String),
     Choice(u32),
     MultipleChoice(Box<[u32]>),
-    Image { top: u32, left: u32 },
+    Image { left: u32, top: u32 },
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
+pub enum QuestPageElement {
+    Text(Box<str>),
+    Question(Question),
+}
+
+pub type QuestPage = Box<[QuestPageElement]>;
+
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
+pub enum AskQuestPageElement {
+    Text(Box<str>),
+    Question(AskQuestion),
+}
+
+pub type AskQuestPage = Box<[AskQuestPageElement]>;
 
 /// POST /api/quests/create
 /// - returns [`QuestId`]
@@ -227,4 +256,6 @@ pub enum Answer {
 /// POST /api/quests/qid/page/0 "lalalal, question ;)" -- updates page 0
 /// POST /api/quests/qid/info "Title; description" -- update title/description
 /// GET /api/quests/qid/info -- returns [`QuestInfo`] with pages=2
-mod doc {}
+mod doc {
+    use super::*;
+}
