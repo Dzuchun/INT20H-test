@@ -140,7 +140,7 @@ pub struct UserOwnedQuestsPage {
     pub total_pages: u32,
 }
 
-/// quests/:id/info
+/// /api/quests/:id/info
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub struct QuestInfo {
     pub id: QuestId,
@@ -195,38 +195,36 @@ pub enum Answer {
     Image { top: u32, left: u32 },
 }
 
-/// POST /quests/create
+/// POST /api/quests/create
 /// - returns [`QuestId`]
 /// - title, desc, source, etc. are empty
 ///
-/// GET /quests/:id/info
+/// GET /api/quests/:id/info
 /// - return [`QuestInfo`]
 ///
-/// POST /quests/:id/info
+/// POST /api/quests/:id/info
 /// - accepts [`QuestInfo`]
 ///
-/// GET /quests/:id/page/:page
+/// GET /api/quests/:id/page/:page
 /// - return [`String`] (source)
 ///
-/// POST /quests/:id/page/:page
+/// POST /api/quests/:id/page/:page
 /// - accepts [`String`] (source), [`Option<Duration>`] (time limit for page)
 /// - server saves source (and [`Vec<Question>`], after quest is published)
 /// - check for OK
 ///
 /// // below is not final
-/// POST /quests/:id/answer/:page
+/// POST /api/quests/:id/answer/:page
 /// - accepts [`Vec<Answer>`]
 /// - check for OK
 ///
-/// /quests/:id
-///
 /// qid = POST /quests/create
-/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=0
-/// POST /quests/qid/page/0 "lalalal, question" -- creates page 0
-/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=1
-/// POST /quests/qid/page/1 "lalalal, question2" -- creates page 1
-/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=2
-/// POST /quests/qid/page/0 "lalalal, question ;)" -- updates page 0
-/// POST /quests/qid/info "Title; description" -- update title/description
-/// GET /quests/qid/info -- returns [`QuestInfo`] with pages=2
+/// GET /api/quests/qid/info -- returns [`QuestInfo`] with pages=0
+/// POST /api/quests/qid/page/0 "lalalal, question" -- creates page 0
+/// GET /api/quests/qid/info -- returns [`QuestInfo`] with pages=1
+/// POST /api/quests/qid/page/1 "lalalal, question2" -- creates page 1
+/// GET /api/quests/qid/info -- returns [`QuestInfo`] with pages=2
+/// POST /api/quests/qid/page/0 "lalalal, question ;)" -- updates page 0
+/// POST /api/quests/qid/info "Title; description" -- update title/description
+/// GET /api/quests/qid/info -- returns [`QuestInfo`] with pages=2
 mod doc {}
