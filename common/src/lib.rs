@@ -286,3 +286,28 @@ pub type AskQuestPage = Box<[AskQuestPageElement]>;
 mod doc {
     use super::*;
 }
+
+// websocket is opened to POST /api/ws/quest/:id
+//
+// ~ flow ~
+//
+// *opened connection* (new / continue)
+//
+
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
+pub enum WsServerMessage {
+    // ok - quest page to answer
+    // err - only pages up to err are available
+    ResponsePage(Result<AskQuestPage, u32>),
+    // ok - answers were submitted
+    // err - only pages up to err are available
+    ResponseSubmit(Result<(), String>),
+    // inform client about bail
+    RequestBail,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
+pub enum WsClientMessage {
+    RequestPage(u32),
+    RequestSubmit(u32, Box<[Answer]>),
+}
