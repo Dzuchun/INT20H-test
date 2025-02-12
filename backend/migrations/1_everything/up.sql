@@ -1,4 +1,4 @@
-CREATE TABLE users
+CREATE TABLE IF NOT EXISTS users
 (
     id            UUID PRIMARY KEY,
     name          VARCHAR(32)  NOT NULL,
@@ -6,14 +6,14 @@ CREATE TABLE users
     password_hash VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE avatars
+CREATE TABLE IF NOT EXISTS avatars
 (
     id           UUID PRIMARY KEY,
     image_data   BYTEA        NOT NULL,
     content_type VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE quests
+CREATE TABLE IF NOT EXISTS quests
 (
     id          UUID PRIMARY KEY,
     owner       UUID    NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE quests
     pages       INTEGER NOT NULL CHECK (pages >= 0)
 );
 
-CREATE TABLE quests_pages
+CREATE TABLE IF NOT EXISTS quests_pages
 (
     id                 UUID    NOT NULL,
     page               INTEGER NOT NULL CHECK (page >= 0),

@@ -82,8 +82,8 @@ pub struct QuestHistoryRecord {
     pub user_id: UserId,
     pub quest_id: QuestId,
     pub started_at: Timestamp,
-    pub finished_at: Timestamp,
-    pub completion: Completion,
+    pub finished_at: Option<Timestamp>,
+    pub completed_pages: u32,
 }
 
 pub const QUEST_HISTORY_PAGE_SIZE: usize = 20;
@@ -260,7 +260,7 @@ pub type AskQuestPage = Box<[AskQuestPageElement]>;
 /// - accepts [`QuestInfo`]
 ///
 /// GET /api/quests/:id/page/:page
-/// - return [`String`] (source)
+/// - return [`String`] (source) //possibly return also time limit
 ///
 /// POST /api/quests/:id/page/:page
 /// - accepts [`String`] (source), [`Option<Duration>`] (time limit for page)
