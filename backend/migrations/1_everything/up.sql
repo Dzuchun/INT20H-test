@@ -39,5 +39,7 @@ CREATE TABLE IF NOT EXISTS quests_applied
     started_at      TIMESTAMP NOT NULL,
     finished_at     TIMESTAMP NULL,
     completed_pages INTEGER   NOT NULL DEFAULT 0,
+    rate            INTEGER,
+    comment         TEXT,
     PRIMARY KEY (user_id, quest_id)
 );

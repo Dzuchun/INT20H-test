@@ -1,9 +1,11 @@
+use bigdecimal::{BigDecimal, ToPrimitive};
 use common::{
     QuestId, QuestInfo, Timestamp, UserId, QUEST_HISTORY_PAGE_SIZE, USER_OWNED_QUESTS_PAGE_SIZE,
 };
+use diesel::dsl::avg;
 use diesel::internal::derives::multiconnection::chrono::Utc;
 use diesel::r2d2::{self, ConnectionManager};
-use diesel::{BoolExpressionMethods, ExpressionMethods};
+use diesel::{BoolExpressionMethods, ExpressionMethods, JoinOnDsl};
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
 use std::time::Duration;
 use tokio::time::sleep;
@@ -264,6 +266,113 @@ impl Database {
             .execute(&mut conn)
             .ok()
             .map(|_x| ())
+    }
+
+    pub async fn is_user_finished_quest(
+        &self,
+        user_id_input: Uuid,
+        quest_id_input: Uuid,
+    ) -> Option<bool> {
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+
+        match quests_applied
+            .filter(user_id.eq(user_id_input).and(quest_id.eq(quest_id_input)))
+            .select(finished_at)
+            .first::<Option<Timestamp>>(&mut conn)
+            .ok()
+        {
+            None => None,
+            Some(time_stamp_option) => match time_stamp_option {
+                Some(_) => Some(true),
+                None => Some(false),
+            },
+        }
+    }
+
+    pub async fn update_user_quest_rate_comment(
+        &self,
+        user_uuid: &Uuid,
+        quest_uuid: &Uuid,
+        comment_input: &str,
+        rate_input: u32,
+    ) -> Option<()> {
+        // Some on success
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+        let updated_rows = diesel::update(quests_applied)
+            .filter(quest_id.eq(quest_uuid).and(user_id.eq(user_uuid)))
+            .set((rate.eq(rate_input as i32), comment.eq(comment_input)))
+            .execute(&mut conn)
+            .ok();
+        match updated_rows {
+            Some(1) => Some(()),
+            _ => None,
+        }
+    }
+
+    pub async fn get_user_quest_last_completed_page(
+        &self,
+        user_id_input: Uuid,
+        quest_id_input: Uuid,
+    ) -> Option<u32> {
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+
+        quests_applied
+            .filter(user_id.eq(user_id_input).and(quest_id.eq(quest_id_input)))
+            .select(completed_pages)
+            .first::<i32>(&mut conn)
+            .ok()
+            .map(|x| x as u32)
+    }
+
+    pub async fn update_user_last_completed_page(
+        &self,
+        user_uuid: &Uuid,
+        quest_uuid: &Uuid,
+        last_completed: u32,
+    ) -> Option<()> {
+        // Some on success
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+        let updated_rows = diesel::update(quests_applied)
+            .filter(quest_id.eq(quest_uuid).and(user_id.eq(user_uuid)))
+            .set(completed_pages.eq(last_completed as i32))
+            .execute(&mut conn)
+            .ok();
+        match updated_rows {
+            Some(1) => Some(()),
+            _ => None,
+        }
+    }
+
+    pub async fn get_quest_avg_rate_per_owner(&self) -> Option<Vec<(Uuid, f64)>> {
+        use crate::schema::quests::dsl::*;
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+
+        let avg_rate = avg(rate);
+        quests
+            .inner_join(quests_applied.on(id.eq(quest_id)))
+            .group_by(owner)
+            .select((owner, avg_rate))
+            .order_by(avg_rate.desc())
+            .load::<(Uuid, Option<BigDecimal>)>(&mut conn)
+            .ok()
+            .map(|x| {
+                x.into_iter()
+                    .map(|(elemuuid, elem_optional_bigdec)| {
+                        (
+                            elemuuid,
+                            elem_optional_bigdec
+                                .map(|bigdec| bigdec.to_f64())
+                                .flatten()
+                                .unwrap_or(0.),
+                        )
+                    })
+                    .collect()
+            })
     }
 
     pub async fn get_quest_page(&self, quest_id: Uuid, page_input: u32) -> Option<String> {

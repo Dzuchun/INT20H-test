@@ -27,6 +27,8 @@ diesel::table! {
         started_at -> Timestamp,
         finished_at -> Nullable<Timestamp>,
         completed_pages -> Int4,
+        rate -> Nullable<Int4>,
+        comment -> Nullable<Text>,
     }
 }
 
