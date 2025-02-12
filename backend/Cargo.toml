@@ -5,3 +5,20 @@ edition = "2021"
 
 [dependencies]
 common = {path = "../common"}
+
+tokio = { version = "1.0", features = ["full"] }
+axum = {version =  "0.8.1", features = ["multipart", "macros"] }
+axum-extra = { version = "0.10", features = ["typed-header"] }
+diesel = { version = "2.2.0", features = ["postgres", "r2d2", "uuid"] }
+moka = { version = "0.12.10", features = ["future"] }
+
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
+serde_json = "1.0.138"
+
+toml = "0.8.20"
+
+thiserror = "2.0.11"
+uuid = { version = "1.13.1", features = ["v4", "fast-rng"] }
+
+bcrypt = "0.17"

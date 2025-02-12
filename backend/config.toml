@@ -1,0 +1,9 @@
+[app]
+address = "0.0.0.0:80"
+
+[database]
+# fields related to postgresql db connection
+address = "127.0.0.1:5432"
+username = "postgres"
+user_password = "password"
+db_name = "mydb"
