@@ -116,6 +116,7 @@ async fn main() {
         // todo .route("/api/ws/quest/:id"... а в ньому фактичне отримання пейджів...
         //       по мірі отримання з ws відповідей змінювати completed_pages в таблиці апплайед,
         //       а якшо останній пейдж поставити finished, etc
+        .fallback_service(tower_http::services::ServeDir::new("/usr/serve/"))
         .with_state(app_state);
 
     let listener = tokio::net::TcpListener::bind(config.app.address)

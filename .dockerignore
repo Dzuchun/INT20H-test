@@ -4,4 +4,4 @@
 .git
 
 # cargo artefacts
-target
+*/target

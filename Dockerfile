@@ -1,12 +1,34 @@
-FROM rust:latest as builder
+# build back
+FROM rust:latest as back-builder
 
 WORKDIR /app
 
-COPY . .
+COPY backend backend
+COPY common common
 
 WORKDIR /app/backend
 
 RUN cargo build --release
+
+# build front
+FROM rust:latest as front-builder
+
+# wasm target
+RUN rustup target add wasm32-unknown-unknown
+# binstall
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+# trunk
+RUN cargo-binstall trunk
+
+WORKDIR /app
+COPY frontend frontend
+COPY common common
+COPY leptos-flavour leptos-flavour 
+
+WORKDIR /app/frontend
+
+# compile-front
+RUN trunk build --release
 
 FROM ubuntu:22.04
 
@@ -23,7 +45,8 @@ RUN service postgresql start && \
     su - postgres -c "psql -c \"CREATE DATABASE mydb;\"" && \
     su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mydb TO postgres;\""
 
-COPY --from=builder /app/target/release/backend /usr/local/bin/backend_server
+COPY --from=back-builder /app/backend/target/release/backend /usr/local/bin/backend_server
+COPY --from=front-builder /app/frontend/dist /usr/serve/
 
 COPY backend/config.toml config.toml
 COPY backend/migrations/1_everything/up.sql /docker-entrypoint-initdb.d/up.sql

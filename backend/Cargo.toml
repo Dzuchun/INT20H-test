@@ -12,6 +12,7 @@ axum-extra = { version = "0.10", features = ["typed-header"] }
 diesel = { version = "2.2.0", features = ["postgres", "r2d2", "uuid", "chrono", "numeric"] }
 bigdecimal = "0.4.7"
 moka = { version = "0.12.10", features = ["future"] }
+tower-http = {version = "0.6.2", features = ["fs"]}
 
 serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"

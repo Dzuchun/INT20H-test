@@ -180,6 +180,7 @@ pub fn parse_quest_page(source: impl Borrow<str>) -> Result<QuestPage, PageParse
                     res.push(QuestPageElement::Question(question));
                     break;
                 }
+                question_lines.push(line);
             }
         } else {
             if !text.is_empty() {
