@@ -10,6 +10,25 @@ diesel::table! {
 }
 
 diesel::table! {
+    quests (id) {
+        id -> Uuid,
+        owner -> Uuid,
+        title -> Nullable<Text>,
+        description -> Nullable<Text>,
+        pages -> Int4,
+    }
+}
+
+diesel::table! {
+    quests_pages (id, page) {
+        id -> Uuid,
+        page -> Int4,
+        source -> Text,
+        time_limit_seconds -> Nullable<Int4>,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Uuid,
         #[max_length = 32]
@@ -21,4 +40,9 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(avatars, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    avatars,
+    quests,
+    quests_pages,
+    users,
+);

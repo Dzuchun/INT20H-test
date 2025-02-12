@@ -5,11 +5,11 @@ use thiserror::Error;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub app: App,
-    pub database: Database,
+    pub database: ConfigDatabase,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Database {
+pub struct ConfigDatabase {
     pub address: String,
     pub username: String,
     pub user_password: String,

@@ -7,7 +7,7 @@ edition = "2021"
 common = {path = "../common"}
 
 tokio = { version = "1.0", features = ["full"] }
-axum = {version =  "0.8.1", features = ["multipart"] }
+axum = {version =  "0.8.1", features = ["multipart", "macros"] }
 axum-extra = { version = "0.10", features = ["typed-header"] }
 diesel = { version = "2.2.0", features = ["postgres", "r2d2", "uuid"] }
 moka = { version = "0.12.10", features = ["future"] }

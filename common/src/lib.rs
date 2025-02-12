@@ -124,8 +124,8 @@ impl From<QuestState> for u8 {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserOwnedQuestRecord {
     pub id: QuestId,
-    pub user_id: UserId,
-    pub state: QuestState,
+    //pub user_id: UserId, // suggest to delete
+    // pub state: QuestState,
     /* proly more fields? */
 }
 
@@ -211,4 +211,6 @@ pub enum Answer {
 /// POST /quests/qid/page/0 "lalalal, question ;)" -- updates page 0
 /// POST /quests/qid/info "Title; description" -- update title/description
 /// GET /quests/qid/info -- returns [`QuestInfo`] with pages=2
-mod doc {}
+mod doc {
+    use super::*;
+}
