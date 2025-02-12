@@ -30,3 +30,13 @@ CREATE TABLE IF NOT EXISTS quests_pages
     time_limit_seconds INTEGER CHECK (time_limit_seconds >= 0),
     PRIMARY KEY (id, page)
 );
+
+CREATE TABLE IF NOT EXISTS quests_applied
+(
+    user_id         UUID      NOT NULL,
+    quest_id        UUID      NOT NULL,
+    started_at      TIMESTAMP NOT NULL,
+    finished_at     TIMESTAMP NULL,
+    completed_pages INTEGER   NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, quest_id)
+);

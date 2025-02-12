@@ -68,14 +68,7 @@ pub struct Avatar(pub Vec<u8>);
 #[display("{_0}")]
 pub struct QuestId(pub Uuid);
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, From, PartialEq, Eq, Hash)]
-pub struct Timestamp(pub chrono::NaiveDateTime);
-
-#[derive(Debug, Clone, Serialize, Deserialize, From)]
-pub struct Completion {
-    pub completed: u32,
-    pub total_pages: u32,
-}
+pub type Timestamp = chrono::NaiveDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuestHistoryRecord {

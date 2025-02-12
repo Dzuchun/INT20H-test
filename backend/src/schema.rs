@@ -20,6 +20,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    quests_applied (user_id, quest_id) {
+        user_id -> Uuid,
+        quest_id -> Uuid,
+        started_at -> Timestamp,
+        finished_at -> Nullable<Timestamp>,
+        completed_pages -> Int4,
+    }
+}
+
+diesel::table! {
     quests_pages (id, page) {
         id -> Uuid,
         page -> Int4,
@@ -43,6 +53,7 @@ diesel::table! {
 diesel::allow_tables_to_appear_in_same_query!(
     avatars,
     quests,
+    quests_applied,
     quests_pages,
     users,
 );
