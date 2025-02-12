@@ -65,6 +65,14 @@ pub async fn update_quest_page(
                 ))),
             );
         }
+        if quest_info.published {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(ApiResponse::Error(String::from(
+                    "not updatable after publish",
+                ))),
+            );
+        }
         quest_info
     } else {
         return (
@@ -72,8 +80,6 @@ pub async fn update_quest_page(
             Json(ApiResponse::Error(String::from("there are no such quest"))),
         );
     };
-
-    // todo accessible only before publishing in some states
 
     let quest_page = match page.parse::<u32>() {
         Ok(quest_page) => quest_page,
@@ -85,7 +91,6 @@ pub async fn update_quest_page(
         }
     };
 
-    // продовжити звідси
     if quest_info.pages > quest_page {
         return (
             StatusCode::BAD_REQUEST,

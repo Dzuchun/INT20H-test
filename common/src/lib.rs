@@ -142,6 +142,7 @@ pub struct QuestInfo {
     pub title: String,
     pub description: String,
     pub pages: u32,
+    pub published: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
@@ -274,6 +275,12 @@ pub type AskQuestPage = Box<[AskQuestPageElement]>;
 /// POST /api/quests/qid/page/0 "lalalal, question ;)" -- updates page 0
 /// POST /api/quests/qid/info "Title; description" -- update title/description
 /// GET /api/quests/qid/info -- returns [`QuestInfo`] with pages=2
+///
+/// далі визначитись з самим отриманням у вигляді орієнтованому на прохідників
+///
+/// ще треба мабуть кверя зарегатись в квест (окремо по ws ще саме проходження)
+/// і зарегатись буде датою початку з history record
+/// і ще кверя на квести в яких зарегався
 mod doc {
     use super::*;
 }

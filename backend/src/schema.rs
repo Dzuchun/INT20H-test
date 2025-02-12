@@ -16,6 +16,7 @@ diesel::table! {
         title -> Nullable<Text>,
         description -> Nullable<Text>,
         pages -> Int4,
+        published -> Bool,
     }
 }
 

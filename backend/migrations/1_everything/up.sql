@@ -19,14 +19,15 @@ CREATE TABLE IF NOT EXISTS quests
     owner       UUID    NOT NULL,
     title       TEXT,
     description TEXT,
-    pages       INTEGER NOT NULL CHECK (pages >= 0)
+    pages       INTEGER NOT NULL CHECK (pages >= 0),
+    published   BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS quests_pages
 (
-    id                 UUID    NOT NULL,
-    page               INTEGER NOT NULL CHECK (page >= 0),
-    source             TEXT    NOT NULL,
+    id                 UUID UNIQUE NOT NULL,
+    page               INTEGER     NOT NULL CHECK (page >= 0),
+    source             TEXT        NOT NULL,
     time_limit_seconds INTEGER CHECK (time_limit_seconds >= 0),
     PRIMARY KEY (id, page)
 );

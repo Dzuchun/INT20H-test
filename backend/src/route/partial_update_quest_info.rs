@@ -1,13 +1,13 @@
-use std::str::FromStr;
-use std::sync::Arc;
+use crate::{ApiResponse, AppState};
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use axum_extra::headers::Cookie;
 use axum_extra::TypedHeader;
+use common::QuestInfo;
+use std::str::FromStr;
+use std::sync::Arc;
 use uuid::Uuid;
-use common::{ QuestInfo};
-use crate::{ApiResponse, AppState};
 
 pub async fn partial_update_quest_info(
     Path(id): Path<String>,
@@ -59,7 +59,17 @@ pub async fn partial_update_quest_info(
         if quest_info.owner != user_id {
             return (
                 StatusCode::UNAUTHORIZED,
-                Json(ApiResponse::Error(String::from("you do now own this quest"))),
+                Json(ApiResponse::Error(String::from(
+                    "you do now own this quest",
+                ))),
+            );
+        }
+        if quest_info.published {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(ApiResponse::Error(String::from(
+                    "not updatable after publish",
+                ))),
             );
         }
     } else {

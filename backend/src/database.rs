@@ -1,4 +1,7 @@
-use common::{QuestId, QuestInfo, UserId, USER_OWNED_QUESTS_PAGE_SIZE};
+use common::{
+    QuestId, QuestInfo, Timestamp, UserId, QUEST_HISTORY_PAGE_SIZE, USER_OWNED_QUESTS_PAGE_SIZE,
+};
+use diesel::internal::derives::multiconnection::chrono::Utc;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::{BoolExpressionMethods, ExpressionMethods};
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
@@ -162,16 +165,17 @@ impl Database {
         let mut conn = self.get_conn_to_death().await;
         let result = quests
             .filter(id.eq(quest_id))
-            .select((id, owner, title, description, pages))
-            .first::<(Uuid, Uuid, Option<String>, Option<String>, i32)>(&mut conn)
+            .select((id, owner, title, description, pages, published))
+            .first::<(Uuid, Uuid, Option<String>, Option<String>, i32, bool)>(&mut conn)
             .ok();
         result.map(
-            |(got_id, got_owner, got_title, got_description, got_pages)| QuestInfo {
+            |(got_id, got_owner, got_title, got_description, got_pages, got_published)| QuestInfo {
                 id: QuestId(got_id),
                 owner: UserId(got_owner),
                 title: got_title.unwrap_or(String::from("")),
                 description: got_description.unwrap_or(String::from("")),
                 pages: got_pages as u32, //todo possibly not good, but i want to see guy who will create 2 billion pages
+                published: got_published,
             },
         )
     }
@@ -194,6 +198,74 @@ impl Database {
         }
     }
 
+    pub async fn get_user_quest_history(
+        &self,
+        user_id_input: Uuid,
+        page: u32,
+    ) -> Option<(Vec<(Uuid, Timestamp, Option<Timestamp>, u32)>, u32)> {
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+
+        let total_pages = ((quests_applied
+            .filter(user_id.eq(user_id_input))
+            .count()
+            .get_result::<i64>(&mut conn)
+            .ok()? as f64)
+            / (QUEST_HISTORY_PAGE_SIZE as f64))
+            .ceil() as u32;
+
+        if total_pages == 0 || page > total_pages {
+            return None;
+        }
+
+        Some((
+            quests_applied
+                .filter(user_id.eq(user_id_input))
+                .select((quest_id, started_at, finished_at, completed_pages))
+                .offset((QUEST_HISTORY_PAGE_SIZE * (page as usize)) as i64)
+                .limit(QUEST_HISTORY_PAGE_SIZE as i64)
+                .load::<(Uuid, Timestamp, Option<Timestamp>, i32)>(&mut conn)
+                .ok()
+                .map(|rows| {
+                    rows.into_iter()
+                        .map(|(q_id, s_at, f_at, pages)| (q_id, s_at, f_at, pages as u32))
+                        .collect()
+                })?,
+            total_pages,
+        ))
+    }
+
+    pub async fn get_user_quest_history_questdata(
+        &self,
+        user_id_input: Uuid,
+        quest_id_input: Uuid,
+    ) -> Option<(Timestamp, Option<Timestamp>, u32)> {
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+        quests_applied
+            .filter(user_id.eq(user_id_input).and(quest_id.eq(quest_id_input)))
+            .select((started_at, finished_at, completed_pages))
+            .first::<(Timestamp, Option<Timestamp>, i32)>(&mut conn)
+            .ok()
+            .map(|(s_at, f_at, pages)| (s_at, f_at, pages as u32))
+    }
+
+    pub async fn first_join_quest(&self, user_id_input: Uuid, quest_id_input: Uuid) -> Option<()> {
+        use crate::schema::quests_applied::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+
+        diesel::insert_into(quests_applied)
+            .values((
+                user_id.eq(user_id_input),
+                quest_id.eq(quest_id_input),
+                started_at.eq(Utc::now().naive_utc()),
+                completed_pages.eq(0),
+            ))
+            .execute(&mut conn)
+            .ok()
+            .map(|_x| ())
+    }
+
     pub async fn get_quest_page(&self, quest_id: Uuid, page_input: u32) -> Option<String> {
         use crate::schema::quests_pages::dsl::*;
         let mut conn = self.get_conn_to_death().await;
@@ -211,6 +283,21 @@ impl Database {
         let updated_rows = diesel::update(quests)
             .filter(id.eq(quest_info.id.0))
             .set(pages.eq(quest_info.pages as i32))
+            .execute(&mut conn)
+            .ok();
+        match updated_rows {
+            Some(1) => Some(()),
+            _ => None,
+        }
+    }
+
+    pub async fn set_published_quest(&self, quest_info: &QuestInfo) -> Option<()> {
+        // Some on success
+        use crate::schema::quests::dsl::*;
+        let mut conn = self.get_conn_to_death().await;
+        let updated_rows = diesel::update(quests)
+            .filter(id.eq(quest_info.id.0))
+            .set(published.eq(true))
             .execute(&mut conn)
             .ok();
         match updated_rows {

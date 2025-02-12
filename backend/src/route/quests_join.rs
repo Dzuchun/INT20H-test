@@ -8,18 +8,17 @@ use std::str::FromStr;
 use std::sync::Arc;
 use uuid::Uuid;
 
-pub async fn get_quest_page(
-    state: State<Arc<AppState>>,
+pub async fn quest_join(
     Path(id): Path<String>,
-    Path(page): Path<String>,
     TypedHeader(session): TypedHeader<Cookie>,
-) -> (StatusCode, Json<ApiResponse<String>>) {
-    let quest_id = match Uuid::from_str(id.as_str()) {
+    state: State<Arc<AppState>>,
+) -> (StatusCode, Json<ApiResponse<()>>) {
+    let quest_uuid = match Uuid::from_str(id.as_str()) {
         Ok(uuid) => uuid,
         Err(_) => {
             return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::Error(String::from("provided bad quest id"))),
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<()>::Error(String::from("bad quest id"))),
             );
         }
     };
@@ -44,7 +43,7 @@ pub async fn get_quest_page(
         }
     };
 
-    let user_id = match state.session_cache.get(&session_uuid).await {
+    let user_uuid = match state.session_cache.get(&session_uuid).await {
         None => {
             return (
                 StatusCode::UNAUTHORIZED,
@@ -54,20 +53,12 @@ pub async fn get_quest_page(
         Some(user_id) => user_id,
     };
 
-    if let Some(quest_info) = state.database.get_quest(quest_id).await {
-        if quest_info.owner != user_id {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(ApiResponse::Error(String::from(
-                    "you do now own this quest",
-                ))),
-            );
-        }
-        if quest_info.published {
+    if let Some(quest_info) = state.database.get_quest(quest_uuid).await {
+        if !quest_info.published {
             return (
                 StatusCode::FORBIDDEN,
                 Json(ApiResponse::Error(String::from(
-                    "not accessible after publish",
+                    "not accessible before publish",
                 ))),
             );
         }
@@ -78,21 +69,31 @@ pub async fn get_quest_page(
         );
     }
 
-    let quest_page = match page.parse::<u32>() {
-        Ok(quest_page) => quest_page,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::Error(String::from("provided bad page number"))),
-            );
-        }
-    };
-
-    if let Some(source) = state.database.get_quest_page(quest_id, quest_page).await {
-        return (StatusCode::OK, Json(ApiResponse::Response(source)));
+    if let Some(_x) = state
+        .database
+        .get_user_quest_history_questdata(user_uuid.0, quest_uuid)
+        .await
+    // if already joined
+    {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::<()>::Error(String::from(
+                "already joined to this quest",
+            ))),
+        );
     }
-    (
-        StatusCode::NOT_FOUND,
-        Json(ApiResponse::Error(String::from("quest not found"))),
-    )
+
+    match state
+        .database
+        .first_join_quest(user_uuid.0, quest_uuid)
+        .await
+    {
+        None => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::Error(String::from(
+                "internal server error, contact administrator with description of this situation",
+            ))),
+        ),
+        Some(()) => (StatusCode::OK, Json(ApiResponse::Response(()))),
+    }
 }
