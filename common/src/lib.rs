@@ -141,7 +141,7 @@ pub struct UserOwnedQuestsPage {
 }
 
 /// quests/:id/info
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub struct QuestInfo {
     pub id: QuestId,
     pub owner: UserId,
@@ -150,31 +150,49 @@ pub struct QuestInfo {
     pub pages: u32,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
+pub struct ImageRectangle {
+    pub top: u32,
+    pub left: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
 /// fn parse(String) -> Vec<Question>
 /// (parsed from source)
-#[derive(Debug, Serialize, Deserialize)] // (for DB)
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)] // (for DB)
 pub enum Question {
-    Opened(/* correct answer */),
-    Choice(/* variants and correct option */),
-    MultipleChoice(/* variants and correct option(s) */),
-    Image(/* image & correct rectangle */),
+    Opened(String),
+    Choice {
+        variants: Box<[String]>,
+        correct: u32,
+    },
+    MultipleChoice {
+        variants: Box<[String]>,
+        correct: Box<[u32]>,
+    },
+    Image {
+        src: String,
+        correct_bounds: ImageRectangle,
+    },
 }
 
 /// server -> client
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub enum AskQuestion {
     Opened,
-    Choice(/* variants */),
-    MultipleChoice(/* variants */),
-    Image(/* image */),
+    Choice { variants: Box<[String]> },
+    MultipleChoice { variants: Box<[String]> },
+    Image { src: String },
 }
 
 /// server <- client
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub enum Answer {
-    Opened(/* user's answer */),
-    Choice(/* user's choice */),
-    MultipleChoice(/* user's choice(s) */),
-    Image(/* point (x,y) */),
+    Opened(String),
+    Choice(u32),
+    MultipleChoice(Box<[u32]>),
+    Image { top: u32, left: u32 },
 }
 
 /// POST /quests/create
